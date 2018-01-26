@@ -1,0 +1,56 @@
+#!/bin/bash
+#
+# usage: clippy FILE
+# Have Clippy speak the text contents of the given FILE.
+#
+# BASH_VERSION="4.1.2(1)-release"
+
+
+function err() {
+  echo "$1" >&2 && exit 1
+}
+
+if [[ $# -ne 1 ]]; then
+  err 'clippy: single file argument required'
+fi
+
+readonly FILE="$1"
+
+if [[ ! -f "$FILE" || ! -r "$FILE" ]]; then
+  err "clippy: could not access \"$FILE\""
+fi
+
+readonly TEMP="$(mktemp)"
+trap 'rm -f "$TEMP";' EXIT
+
+cat "$FILE" | fmt -u --width=67 >"$TEMP"
+
+readonly LINES=$(cat "$TEMP" | wc -l)
+
+if [[ $LINES -gt 7 ]]; then
+  err 'clippy: file too long to format'
+fi
+
+mapfile CLIPPY <<'EOF'
+ __     
+ /  \   
+ |  |   
+ @  @   
+ || ||  
+ || ||  
+ |\_/|  
+ \___/  
+        
+EOF
+
+mapfile QUOTE <"$TEMP"
+
+for ((i=0; i<9; i++)); do
+  echo -n "${CLIPPY[$i]}" | tr -d '\n'
+
+  if [[ $i -ge 1  ]]; then
+    echo -n "${QUOTE[$((i - 1))]}" | tr -d '\n'
+  fi
+
+  echo
+done
